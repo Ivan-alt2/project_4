@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db.models import Count
 from django.views.generic import CreateView, UpdateView, DetailView
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
@@ -17,7 +18,7 @@ User = get_user_model()
 
 def profile_view(request, username):
     user = get_object_or_404(User, username=username)
-    posts = user.posts.all()
+    posts = user.posts.annotate(comment_count=Count('comments'))
     if request.user.username != username:
         posts = posts.filter(
             is_published=True,
@@ -124,10 +125,14 @@ class PostDetailView(DetailView):
 
 
 def index(request):
-    post_list = Post.objects.select_related('category').filter(
-        pub_date__lte=timezone.now(),
-        is_published=True,
-        category__is_published=True,
+    post_list = (
+        Post.objects.select_related('category')
+        .annotate(comment_count=Count('comments'))
+        .filter(
+            pub_date__lte=timezone.now(),
+            is_published=True,
+            category__is_published=True,
+        )
     )
     paginator = Paginator(post_list, LIMIT_POSTS)
     page_number = request.GET.get('page')
@@ -140,9 +145,11 @@ def category_posts(request, category_slug):
     category = get_object_or_404(
         Category, slug=category_slug, is_published=True
     )
-    post_list = category.posts.filter(
-        is_published=True,
-        pub_date__lte=timezone.now(),
+    post_list = (
+        category.posts.annotate(comment_count=Count('comments')).filter(
+            is_published=True,
+            pub_date__lte=timezone.now(),
+        )
     )
     paginator = Paginator(post_list, LIMIT_POSTS)
     page_number = request.GET.get('page')
