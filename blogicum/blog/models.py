@@ -1,5 +1,5 @@
-from django.contrib.auth import get_user_model
 from django.db import models
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from core.models import PublishedModel
@@ -10,11 +10,7 @@ User = get_user_model()
 class Category(PublishedModel):
     title = models.CharField('Заголовок', max_length=256)
     description = models.TextField('Описание')
-    image = models.ImageField(
-        'Фото',
-        upload_to='post_images',
-        blank=True,
-    )
+    image = models.ImageField('Фото', upload_to='post_images', blank=True)
     slug = models.SlugField(
         'Идентификатор',
         unique=True,
@@ -44,11 +40,7 @@ class Location(PublishedModel):
 class Post(PublishedModel):
     title = models.CharField('Заголовок', max_length=256)
     text = models.TextField('Текст')
-    image = models.ImageField(
-        'Фото',
-        upload_to='post_images',
-        blank=True,
-    )
+    image = models.ImageField('Фото', upload_to='post_images', blank=True)
     pub_date = models.DateTimeField(
         'Дата и время публикации',
         help_text='Если установить дату и время в будущем — '
@@ -98,7 +90,7 @@ class Comment(models.Model):
         help_text='Выберите пост, к которому относится комментарий',
     )
     created_at = models.DateTimeField(
-        'Добавлено',
+        'Дата и время публикации',
         auto_now_add=True,
     )
     author = models.ForeignKey(
@@ -114,7 +106,7 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return self.text
+        return self.text[:30]
 
 
 class Profile(PublishedModel):
@@ -128,4 +120,5 @@ class Profile(PublishedModel):
         verbose_name_plural = 'Профили'
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        full_name = f'{self.first_name} {self.last_name}'.strip()
+        return full_name or 'Профиль'
