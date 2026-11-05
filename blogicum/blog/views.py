@@ -26,7 +26,7 @@ def profile_view(request, username):
             pub_date__lte=timezone.now(),
         )
 
-    paginator = Paginator(posts, LIMIT_POSTS)
+    paginator = Paginator(posts.order_by('-pub_date'), LIMIT_POSTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
@@ -133,6 +133,7 @@ def index(request):
             is_published=True,
             category__is_published=True,
         )
+        .order_by('-pub_date')
     )
     paginator = Paginator(post_list, LIMIT_POSTS)
     page_number = request.GET.get('page')
@@ -146,10 +147,12 @@ def category_posts(request, category_slug):
         Category, slug=category_slug, is_published=True
     )
     post_list = (
-        category.posts.annotate(comment_count=Count('comments')).filter(
+        category.posts.annotate(comment_count=Count('comments'))
+        .filter(
             is_published=True,
             pub_date__lte=timezone.now(),
         )
+        .order_by('-pub_date')
     )
     paginator = Paginator(post_list, LIMIT_POSTS)
     page_number = request.GET.get('page')
