@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.conf import settings
 from django.db.models import Count
 from django.views.generic import CreateView, UpdateView, DetailView
 from django.urls import reverse_lazy
@@ -11,7 +12,6 @@ from django.http import Http404, HttpResponseForbidden
 
 from blog.forms import PostForm, CommentForm, ProfileForm, PasswordChangeForm
 from blog.models import Post, Category, Comment
-from blogicum.settings import LIMIT_POSTS
 
 User = get_user_model()
 
@@ -26,8 +26,10 @@ def profile_view(request, username):
             pub_date__lte=timezone.now(),
         )
 
-    paginator = Paginator(posts.order_by('-pub_date'), LIMIT_POSTS)
-    page_number = request.GET.get('page')
+    paginator = Paginator(
+        posts.order_by('-pub_date'), settings.LIMIT_POSTS
+    )
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     context = {
         'profile': user,
@@ -53,12 +55,12 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 @login_required
 def password_change_view(request, username):
     form = PasswordChangeForm(request.user, request.POST or None)
-    if form.is_valid():
-        user = form.save()
-        update_session_auth_hash(request, user)
-        return redirect('blog:password_change_done')
-    context = {'form': form}
-    return render(request, 'blog/password_change_form.html', context)
+    if not form.is_valid():
+        context = {'form': form}
+        return render(request, 'blog/password_change_form.html', context)
+    user = form.save()
+    update_session_auth_hash(request, user)
+    return redirect('blog:password_change_done')
 
 
 class PostMixin:
@@ -135,8 +137,8 @@ def index(request):
         )
         .order_by('-pub_date')
     )
-    paginator = Paginator(post_list, LIMIT_POSTS)
-    page_number = request.GET.get('page')
+    paginator = Paginator(post_list, settings.LIMIT_POSTS)
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     context = {'page_obj': page_obj}
     return render(request, 'blog/index.html', context)
@@ -154,8 +156,8 @@ def category_posts(request, category_slug):
         )
         .order_by('-pub_date')
     )
-    paginator = Paginator(post_list, LIMIT_POSTS)
-    page_number = request.GET.get('page')
+    paginator = Paginator(post_list, settings.LIMIT_POSTS)
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     context = {'category': category, 'page_obj': page_obj}
     return render(request, 'blog/category.html', context)
