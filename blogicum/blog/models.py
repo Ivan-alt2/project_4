@@ -6,6 +6,15 @@ from core.models import PublishedModel
 
 User = get_user_model()
 
+SLUG_HELP_TEXT = (
+    'Идентификатор страницы для URL; '
+    'разрешены символы латиницы, цифры, дефис и подчёркивание.'
+)
+PUB_DATE_HELP_TEXT = (
+    'Если установить дату и время в будущем — '
+    'можно делать отложенные публикации.'
+)
+
 
 class Category(PublishedModel):
     title = models.CharField('Заголовок', max_length=256)
@@ -14,8 +23,7 @@ class Category(PublishedModel):
     slug = models.SlugField(
         'Идентификатор',
         unique=True,
-        help_text='Идентификатор страницы для URL; '
-                  'разрешены символы латиницы, цифры, дефис и подчёркивание.',
+        help_text=SLUG_HELP_TEXT,
     )
 
     class Meta:
@@ -43,8 +51,7 @@ class Post(PublishedModel):
     image = models.ImageField('Фото', upload_to='post_images', blank=True)
     pub_date = models.DateTimeField(
         'Дата и время публикации',
-        help_text='Если установить дату и время в будущем — '
-                  'можно делать отложенные публикации.',
+        help_text=PUB_DATE_HELP_TEXT,
     )
     author = models.ForeignKey(
         User,
@@ -73,11 +80,11 @@ class Post(PublishedModel):
         verbose_name_plural = 'Публикации'
         ordering = ('-pub_date',)
 
-    def get_absolute_url(self):
-        return reverse('blog:profile', args=[self.author])
-
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        return reverse('blog:profile', args=[self.author])
 
 
 class Comment(models.Model):
