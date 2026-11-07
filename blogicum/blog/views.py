@@ -214,6 +214,8 @@ def delete_comment(request, post_id, comment_id):
         }
         return render(request, 'blog/comment.html', context)
         
-    #я не понимаю если я что то меняю и пытаюсь исправить всеровно не проходит тесты
+#я не понимаю если я что то меняю и пытаюсь
+#исправить всеровно не проходит тесты и прихожу
+#к своему варианту
     comment.delete()
     return redirect('blog:post_detail', post_id)
