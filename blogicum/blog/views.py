@@ -210,3 +210,4 @@ def delete_comment(request, post_id, comment_id):
         return render(request, 'blog/comment.html', context)
     comment.delete()
     return redirect('blog:post_detail', post_id)
+    
