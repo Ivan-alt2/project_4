@@ -9,52 +9,57 @@ User = get_user_model()
 
 
 class CommentForm(forms.ModelForm):
-
     class Meta:
         model = Comment
         fields = ('text',)
 
 
 class PostForm(forms.ModelForm):
-
     class Meta:
         model = Post
         fields = (
             'title',
             'text',
-            'pub_date',
             'image',
+            'pub_date',
             'location',
             'category',
         )
-        widgets = {'pub_date': forms.DateInput(attrs={'type': 'date'})}
+        widgets = {
+            'pub_date': forms.DateInput(attrs={'type': 'date'})
+        }
 
 
 class CustomUserCreationForm(UserCreationForm):
-
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'bio')
+        fields = ('username', 'first_name', 'last_name', 'email', 'bio')
 
 
 class ProfileForm(forms.ModelForm):
-
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'email')
+        fields = ('first_name', 'last_name', 'username', 'email', 'bio')
 
 
 class PasswordChangeForm(forms.Form):
     password1 = forms.CharField(
-        label='Новый пароль', widget=forms.PasswordInput
+        label='New password', 
+        widget=forms.PasswordInput,
+        strip=False
     )
     password2 = forms.CharField(
-        label='Подтвердите пароль', widget=forms.PasswordInput
+        label='Confirm new password', 
+        widget=forms.PasswordInput,
+        strip=False
     )
 
     def clean(self):
         cleaned_data = super().clean()
         password1 = cleaned_data.get('password1')
         password2 = cleaned_data.get('password2')
+
         if password1 and password2 and password1 != password2:
-            raise forms.ValidationError('Пароли не совпадают')
+            raise forms.ValidationError("Passwords don't match")
+        
+        return cleaned_data
