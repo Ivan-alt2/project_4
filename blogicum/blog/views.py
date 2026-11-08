@@ -1,5 +1,4 @@
 from django.utils import timezone
-from django.conf import settings
 from django.db.models import Count
 from django.views.generic import CreateView, UpdateView, DetailView
 from django.urls import reverse_lazy
@@ -9,6 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import update_session_auth_hash, get_user_model
 from django.http import Http404, HttpResponseForbidden
+from django.conf import settings
 
 from blog.forms import PostForm, CommentForm, ProfileForm, PasswordChangeForm
 from blog.models import Post, Category, Comment
@@ -19,6 +19,7 @@ User = get_user_model()
 def profile_view(request, username):
     user = get_object_or_404(User, username=username)
     posts = user.posts.annotate(comment_count=Count('comments'))
+
     if request.user.username != username:
         posts = posts.filter(
             is_published=True,
@@ -26,11 +27,10 @@ def profile_view(request, username):
             pub_date__lte=timezone.now(),
         )
 
-    paginator = Paginator(
-        posts.order_by('-pub_date'), settings.LIMIT_POSTS
-    )
     page_number = request.GET.get('page', 1)
+    paginator = Paginator(posts.order_by('-pub_date'), settings.LIMIT_POSTS)
     page_obj = paginator.get_page(page_number)
+
     context = {
         'profile': user,
         'page_obj': page_obj,
@@ -58,6 +58,7 @@ def password_change_view(request, username):
     if not form.is_valid():
         context = {'form': form}
         return render(request, 'blog/password_change_form.html', context)
+
     user = form.save()
     update_session_auth_hash(request, user)
     return redirect('blog:password_change_done')
@@ -70,7 +71,6 @@ class PostMixin:
 
 
 class PostCreateView(LoginRequiredMixin, PostMixin, CreateView):
-
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
@@ -81,7 +81,7 @@ class PostUpdateView(LoginRequiredMixin, PostMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         if self.get_object().author != request.user:
-            return redirect('blog:post_detail', kwargs['post_id'])
+            return redirect('blog:post_detail', **kwargs)
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -111,15 +111,10 @@ class PostDetailView(DetailView):
 
     def get_object(self):
         post = super().get_object()
-        is_author = self.request.user == post.author
-        is_future = (
-            post.pub_date is not None and post.pub_date > timezone.now()
-        )
-        if not is_author and (
+        if self.request.user != post.author and (
             not post.is_published
             or post.category is None
             or not post.category.is_published
-            or is_future
         ):
             raise Http404()
         return post
@@ -142,8 +137,8 @@ def index(request):
         )
         .order_by('-pub_date')
     )
-    paginator = Paginator(post_list, settings.LIMIT_POSTS)
     page_number = request.GET.get('page', 1)
+    paginator = Paginator(post_list, settings.LIMIT_POSTS)
     page_obj = paginator.get_page(page_number)
     context = {'page_obj': page_obj}
     return render(request, 'blog/index.html', context)
@@ -161,8 +156,8 @@ def category_posts(request, category_slug):
         )
         .order_by('-pub_date')
     )
-    paginator = Paginator(post_list, settings.LIMIT_POSTS)
     page_number = request.GET.get('page', 1)
+    paginator = Paginator(post_list, settings.LIMIT_POSTS)
     page_obj = paginator.get_page(page_number)
     context = {'category': category, 'page_obj': page_obj}
     return render(request, 'blog/category.html', context)
@@ -215,7 +210,3 @@ def delete_comment(request, post_id, comment_id):
         return render(request, 'blog/comment.html', context)
     comment.delete()
     return redirect('blog:post_detail', post_id)
-
-# я не понимаю если я что то меняю и пытаюсь
-# исправить всеровно не проходит тесты и прихожу
-# к своему варианту
