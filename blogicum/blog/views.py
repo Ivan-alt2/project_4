@@ -111,12 +111,18 @@ class PostDetailView(DetailView):
 
     def get_object(self):
         post = super().get_object()
-        if self.request.user != post.author and (
-            not post.is_published
-            or post.category is None
-            or not post.category.is_published
+        user = self.request.user
+
+        if user == post.author:
+            return post
+
+        if (
+            (post.category is None or not post.category.is_published)
+            or not post.is_published
+            or post.pub_date > timezone.now()
         ):
-            raise Http404()
+            raise Http404("Публикация не найдена или недоступна")
+
         return post
 
     def get_context_data(self, **kwargs):
