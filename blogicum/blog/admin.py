@@ -3,6 +3,7 @@ from django.contrib import admin
 from blog.models import Post, Category, Location
 
 
+@admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     search_fields = (
         'title',
@@ -11,6 +12,7 @@ class PostAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     search_fields = (
         'title',
@@ -18,11 +20,9 @@ class CategoryAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
 admin.site.empty_value_display = 'Не задано'
-admin.site.register(Post, PostAdmin)
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Location, LocationAdmin)
